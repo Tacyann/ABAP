@@ -1,0 +1,94 @@
+*&---------------------------------------------------------------------*
+*& Report  ZFORNECEDOR1819_ALV
+*&
+*&---------------------------------------------------------------------*
+*& Descricao: Relatorio de Fornecedores  ALV
+*& Autor: Tacyanne Pimentel - Data: 18.08.2021
+*&---------------------------------------------------------------------*
+
+REPORT zfornecedores1819_alv.
+*----------------------------------------------------------------------*
+* Tables
+*----------------------------------------------------------------------*
+TABLES lfa1.
+
+*----------------------------------------------------------------------*
+* Types / Structure
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_lfa1,
+ lifnr TYPE lfa1-lifnr,
+ name1 TYPE lfa1-name1,
+ land1 TYPE lfa1-land1,
+ ort01 TYPE lfa1-ort01,
+ pstlz TYPE lfa1-pstlz,
+       END OF ty_lfa1.
+
+*----------------------------------------------------------------------*
+* WorkArea
+*----------------------------------------------------------------------*
+DATA: wa_lfa1     TYPE ty_lfa1,
+      wa_fieldcat TYPE slis_fieldcat_alv.
+
+*----------------------------------------------------------------------*
+* Internal table
+*----------------------------------------------------------------------*
+DATA: ti_lfa1     TYPE TABLE OF ty_lfa1,
+      ti_fieldcat TYPE slis_t_fieldcat_alv.
+
+*----------------------------------------------------------------------*
+* Selection Screen
+*----------------------------------------------------------------------*
+SELECT-OPTIONS s_lifnr FOR lfa1-lifnr.
+
+*----------------------------------------------------------------------*
+* Start-Of-Selection - Evento
+*----------------------------------------------------------------------*
+START-OF-SELECTION.
+
+* Open SQL (Selecionando Dados )
+  SELECT lifnr
+         name1
+         land1
+         ort01
+         pstlz
+         FROM lfa1
+         INTO TABLE ti_lfa1
+         WHERE lifnr IN s_lifnr.
+
+* Preenche o Fieldcat.
+  wa_fieldcat-fieldname = 'LIFNR'.
+  wa_fieldcat-tabname   = 'TI_lfa1'.
+  wa_fieldcat-seltext_l = 'Codigo'.
+  APPEND wa_fieldcat TO ti_fieldcat.
+  CLEAR wa_fieldcat.
+
+  wa_fieldcat-fieldname = 'NAME1'.
+  wa_fieldcat-tabname   = 'TI_lfa1'.
+  wa_fieldcat-seltext_l = 'Nome'.
+  APPEND wa_fieldcat TO ti_fieldcat.
+  CLEAR wa_fieldcat.
+
+  wa_fieldcat-fieldname = 'LAND1'.
+  wa_fieldcat-tabname   = 'TI_lfa1'.
+  wa_fieldcat-seltext_l = 'Nome'.
+  APPEND wa_fieldcat TO ti_fieldcat.
+  CLEAR wa_fieldcat.
+
+  wa_fieldcat-fieldname = 'ORT01'.
+  wa_fieldcat-tabname   = 'TI_lfa1'.
+  wa_fieldcat-seltext_l = 'Cidade'.
+  APPEND wa_fieldcat TO ti_fieldcat.
+  CLEAR wa_fieldcat.
+
+  wa_fieldcat-fieldname = 'PSTLZ'.
+  wa_fieldcat-tabname   = 'TI_lfa1'.
+  wa_fieldcat-seltext_l = 'UF'.
+  APPEND wa_fieldcat TO ti_fieldcat.
+  CLEAR wa_fieldcat.
+
+* Mostrar o ALV
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+  EXPORTING
+   IT_FIELDCAT  = TI_FIELDCAT
+    TABLES
+      t_outtab = ti_lfa1.

@@ -1,0 +1,27 @@
+*&---------------------------------------------------------------------*
+*& Report  ZPROGRAMA_1619
+*&
+*&---------------------------------------------------------------------*
+*& Descricao: Primeiro Programa em ABAP
+*& Autor: Tacyanne Pimentel - 16.08.2021
+*&---------------------------------------------------------------------*
+REPORT ZPROGRAMA_1619.
+
+*Declaracao de Variaveis
+PARAMETERS P_NUM TYPE I.
+
+START-OF-SELECTION.
+
+DATA VL_RESULT TYPE I.
+
+DO 10 TIMES.
+
+VL_RESULT = P_NUM * SY-INDEX.
+
+WRITE / P_NUM.
+WRITE 'X'.
+WRITE SY-INDEX.
+WRITE '='.
+WRITE VL_RESULT.
+
+ENDDO.

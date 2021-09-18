@@ -1,0 +1,36 @@
+*&---------------------------------------------------------------------*
+*& Report  ZCALCULADORA_1619
+*&
+*&---------------------------------------------------------------------*
+*& Descricao: Calculadora em ABAP
+*& Autor: Tacyanne Pimentel - 16.08.2021
+*&---------------------------------------------------------------------*
+
+REPORT zcalculadora_1619.
+
+* Declaracao de Variaveis Parametros
+PARAMETERS p_num1 TYPE i.
+PARAMETERS p_sinal TYPE c.
+PARAMETERS p_num2 TYPE i OBLIGATORY.
+
+START-OF-SELECTION.
+
+  DATA vl_result TYPE i. " Declaracao de Variavel Resultado
+
+  CASE p_sinal.
+    WHEN '+'.
+      vl_result = p_num1 + p_num2. " Adicao
+    WHEN '-'.
+      vl_result = p_num1 - p_num2. " Subtracaoo
+    WHEN '*'.
+      vl_result = p_num1 * p_num2. " Multiplicacao
+    WHEN '/'.
+      IF p_num2 > 0.
+        vl_result = p_num1 / p_num2. " DivisAo
+      ENDIF.
+    WHEN OTHERS.
+      MESSAGE 'SINAL INVALIDO' TYPE 'E'.
+  ENDCASE.
+
+  WRITE: 'O RESULTADO E:',
+          vl_result.

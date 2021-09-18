@@ -1,0 +1,150 @@
+*&---------------------------------------------------------------------*
+*& Report  ZBATCH_INPUT_2419
+*&
+*&---------------------------------------------------------------------*
+*& Descricao: Programa Modelo de Batch Input
+*& Autor: Tacyanne Pimentel - Data: 24.08.21
+*&---------------------------------------------------------------------*
+REPORT zbatch_input_2419.
+
+*&---------------------------------------------------------------------*
+* STRUCTURE TYPES
+*&---------------------------------------------------------------------*
+TYPES: BEGIN OF ty_user,
+        usuario(12) TYPE c,
+        depto(40)   TYPE c,
+       END OF ty_user.
+
+*&---------------------------------------------------------------------*
+* WORK AREA
+*&---------------------------------------------------------------------*
+DATA: wa_user   TYPE ty_user,
+      wa_params TYPE ctu_params,
+      wa_bdc    TYPE bdcdata,
+      wa_msg    TYPE bdcmsgcoll.
+
+*&---------------------------------------------------------------------*
+* INTERNAL TABLE
+*&---------------------------------------------------------------------*
+DATA: ti_user TYPE TABLE OF ty_user,
+      ti_bdc  TYPE TABLE OF bdcdata,
+      ti_msg  TYPE TABLE OF bdcmsgcoll.
+
+*&---------------------------------------------------------------------*
+* Selection Screen
+*&---------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-t01.
+PARAMETERS p_file TYPE string.
+SELECTION-SCREEN END OF BLOCK b1.
+
+*&---------------------------------------------------------------------*
+* AT SELECTION-SCREEN (AJUDA DE PESQUISA)
+*&---------------------------------------------------------------------*
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_file.
+
+  CALL FUNCTION 'GUI_FILE_LOAD_DIALOG'
+    EXPORTING
+      window_title      = 'Localiza o Arquivo'
+      default_extension = 'TXT'
+      default_file_name = p_file
+    IMPORTING
+      fullpath          = p_file.
+
+*&---------------------------------------------------------------------*
+* START-OF-SELECTION (EVENTO)
+*&---------------------------------------------------------------------*
+START-OF-SELECTION.
+
+  CALL FUNCTION 'GUI_UPLOAD'
+    EXPORTING
+      filename                = p_file
+    TABLES
+      data_tab                = ti_user
+    EXCEPTIONS
+      file_open_error         = 1
+      file_read_error         = 2
+      no_batch                = 3
+      gui_refuse_filetransfer = 4
+      invalid_type            = 5
+      no_authority            = 6
+      unknown_error           = 7
+      bad_data_format         = 8
+      header_not_allowed      = 9
+      separator_not_allowed   = 10
+      header_too_long         = 11
+      unknown_dp_error        = 12
+      access_denied           = 13
+      dp_out_of_memory        = 14
+      disk_full               = 15
+      dp_timeout              = 16
+      OTHERS                  = 17.
+
+  LOOP AT ti_user INTO wa_user.
+
+*&---------------------------------------------------------------------*
+* PARTE DINAMICA DO BATCH INPUT
+*&---------------------------------------------------------------------*
+
+    PERFORM f_preenche_bdc USING: 'X' '1050'                'SAPLSUID_MAINTENANCE',
+                                  ' ' 'BDC_CURSOR'          'SUID_ST_BNAME-BNAME',
+                                  ' ' 'BDC_OKCODE'          '=CHAN',
+                                  ' ' 'SUID_ST_BNAME-BNAME' wa_user-usuario.
+
+    PERFORM f_preenche_bdc USING: 'X' '1100'                               'SAPLSUID_MAINTENANCE',
+                                  ' ' 'BDC_OKCODE'                         '=UPD',
+                                  ' ' 'BDC_SUBSCR'                         'SAPLSUID_MAINTENANCE                    1900MAINAREA',
+                                  ' ' 'BDC_CURSOR'                         'SUID_ST_NODE_WORKPLACE-DEPARTMENT',
+                                  ' ' 'SUID_ST_NODE_WORKPLACE-DEPARTMENT'  wa_user-depto.
+  ENDLOOP.
+
+  PERFORM f_preenche_bdc USING: 'X' '1050'                'SAPLSUID_MAINTENANCE',
+                                ' ' 'BDC_OKCODE'          '=BACK'.
+
+  wa_params-racommit = abap_true.
+  wa_params-dismode  = 'A'.  " A - VISIVEL / N - BACKGROUND "
+
+  CALL TRANSACTION 'SU01' USING ti_bdc
+                          OPTIONS FROM wa_params
+                          MESSAGES INTO ti_msg.
+
+  DATA vl_texto TYPE string.
+
+  "SELECT para validar os dados antes de compor o arquivo"
+
+  LOOP AT ti_msg INTO wa_msg.
+
+    CALL FUNCTION 'MESSAGE_TEXT_BUILD'
+      EXPORTING
+        msgid               = wa_msg-msgid
+        msgnr               = wa_msg-msgnr
+        msgv1               = wa_msg-msgv1
+        msgv2               = wa_msg-msgv2
+        msgv3               = wa_msg-msgv3
+        msgv4               = wa_msg-msgv4
+      IMPORTING
+        message_text_output = vl_texto.
+
+    WRITE / vl_texto.
+  ENDLOOP.
+
+*&---------------------------------------------------------------------*
+*&      Form  F_PREENCHE_BDC
+*&---------------------------------------------------------------------*
+*       PREENCHE O BDCDATA
+*----------------------------------------------------------------------*
+
+FORM f_preenche_bdc USING p1 p2 p3.
+
+  IF p1 = abap_true.
+    wa_bdc-program  = p3.
+    wa_bdc-dynpro   = p2.
+    wa_bdc-dynbegin = p1.
+  ELSE.
+    wa_bdc-fnam     = p2.
+    wa_bdc-fval     = p3.
+  ENDIF.
+  APPEND wa_bdc TO ti_bdc.
+  CLEAR wa_bdc.
+
+
+ENDFORM.                    " F_PREENCHE_BDC
